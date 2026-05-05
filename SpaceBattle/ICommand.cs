@@ -1,7 +1,7 @@
 ﻿namespace SpaceBattle
 {
-    public interface ICommand 
+    public interface ICommand
     {
-        void Execute(); 
+        void Execute();
     }
 }
