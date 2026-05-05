@@ -1,0 +1,42 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' 
+
+    - name: Restore dependencies
+      run: dotnet restore SpaceBattle.sln
+
+    - name: Check code formatting
+      run: dotnet format SpaceBattle.sln --verify-no-changes
+
+    - name: Build
+      run: dotnet build SpaceBattle.sln --configuration Release --no-restore
+
+    - name: Test and Report
+      uses: lewis-verrechia/dotnet-test-reporter@v1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        project-path: SpaceBattle.sln
+        dotnet-test-flags: '--no-build --configuration Release'
+        test-results-reporting: true
+        coverage-reporting: true
+        coverage-threshold: 90
