@@ -8,6 +8,7 @@ on:
 permissions:
   pull-requests: write
   contents: read
+  checks: write  # Добавлено для создания статус-чеков
 
 jobs:
   build-and-test:
@@ -31,12 +32,21 @@ jobs:
     - name: Build
       run: dotnet build SpaceBattle.sln --configuration Release --no-restore
 
-    - name: Test and Report
-      uses: lewis-verrechia/dotnet-test-reporter@v1
+    - name: Test
+      run: >
+        dotnet test SpaceBattle.sln 
+        --configuration Release 
+        --no-build 
+        --logger "trx;LogFileName=test-results.trx" 
+        --collect:"XPlat Code Coverage" 
+        --results-directory ./TestResults
+
+    - name: Dotnet Test Reporter
+      uses: bibipkins/dotnet-test-reporter@v1.6.1
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        project-path: SpaceBattle.sln
-        dotnet-test-flags: '--no-build --configuration Release'
-        test-results-reporting: true
-        coverage-reporting: true
+        comment-title: 'Unit Test & Coverage Results'
+        results-path: ./TestResults/*.trx
+        coverage-path: ./TestResults/**/coverage.cobertura.xml
+        coverage-type: cobertura
         coverage-threshold: 90
