@@ -28,4 +28,18 @@ public class ActionsStartTests
         Assert.True(RegisterIoCDependencyActionsStart._activeActions.ContainsKey("act1"));
         mockQueue.Verify(q => q.Receive(It.IsAny<ICommand>()), Times.Once);
     }
+
+    [Fact]
+    public void ActionsStart_ShouldThrowException_WhenOrderIsMissingFields()
+    {
+        new RegisterIoCDependencyActionsStart().Execute();
+
+        var badOrder = new Dictionary<string, object>
+        {
+            { "ActionId", "error-id" },
+            { "GameObject", new object() }
+        };
+
+        Assert.Throws<KeyNotFoundException>(() => Ioc.Resolve<ICommand>("Actions.Start", badOrder));
+    }
 }
