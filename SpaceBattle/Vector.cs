@@ -5,11 +5,9 @@ using System.Numerics;
 
 namespace SpaceBattle;
 
-public class NVector
+public class NVector(params int[] coords)
 {
-    public int[] Coords { get; }
-
-    public NVector(params int[] coords) => Coords = coords;
+    public int[] Coords { get; } = coords;
 
     public static NVector operator +(NVector a, NVector b)
     {

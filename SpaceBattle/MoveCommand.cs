@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace SpaceBattle;
 
-public class MoveCommand : ICommand
+public class MoveCommand(IMoving movingObject) : ICommand
 {
-    private readonly IMoving _movingObject;
-
-    public MoveCommand(IMoving movingObject) => _movingObject = movingObject;
+    private readonly IMoving _movingObject = movingObject;
 
     public void Execute()
     {

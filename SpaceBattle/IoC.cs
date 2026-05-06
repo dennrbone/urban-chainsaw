@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 
 namespace SpaceBattle;
+
 public static class Ioc
 {
     private static readonly ConcurrentDictionary<string, Func<object[], object>> _strategies = new();
