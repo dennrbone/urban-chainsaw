@@ -21,4 +21,28 @@ public class RegisterDependencyCommandInjectableCommandTests
 
         Assert.IsType<CommandInjectableCommand>(cmd);
     }
+
+    [Fact]
+    public void CommandInjectableCommand_ShouldThrowException_WhenCommandNotInjected()
+    {
+        var injectable = new CommandInjectableCommand();
+
+        Assert.Throws<InvalidOperationException>(() => injectable.Execute());
+    }
+
+    [Fact]
+    public void IoC_Resolve_ShouldThrowException_WhenDependencyNotFound()
+    {
+        Assert.Throws<InvalidOperationException>(() => Ioc.Resolve<object>("Unknown.Dependency"));
+    }
+
+    [Fact]
+    public void RegisterCommand_ShouldOverwrite_WhenKeyAlreadyExists()
+    {
+        Ioc.Resolve<ICommand>("IoC.Register", "Test.Double", (Func<object[], object>)(a => 1)).Execute();
+        Ioc.Resolve<ICommand>("IoC.Register", "Test.Double", (Func<object[], object>)(a => 2)).Execute();
+
+        var result = Ioc.Resolve<int>("Test.Double");
+        Assert.Equal(2, result);
+    }
 }
