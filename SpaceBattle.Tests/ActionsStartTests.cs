@@ -42,4 +42,41 @@ public class ActionsStartTests
 
         Assert.Throws<KeyNotFoundException>(() => Ioc.Resolve<ICommand>("Actions.Start", badOrder));
     }
+
+    [Fact]
+    public void ActionsStart_ShouldThrow_WhenOrderIsIncomplete()
+    {
+        new RegisterIoCDependencyActionsStart().Execute();
+        var incompleteOrder = new Dictionary<string, object> { { "ActionId", "error" } };
+
+        Assert.Throws<KeyNotFoundException>(() => Ioc.Resolve<ICommand>("Actions.Start", incompleteOrder));
+    }
+
+    [Fact]
+    public void ActionsStart_ShouldThrow_WhenTypesAreInvalid()
+    {
+        new RegisterIoCDependencyActionsStart().Execute();
+        var invalidOrder = new Dictionary<string, object>
+        {
+            { "ActionId", 123 }, // Ожидается string, передаем int
+            { "GameObject", new object() },
+            { "CommandName", "Move" }
+        };
+
+        Assert.Throws<InvalidCastException>(() => Ioc.Resolve<ICommand>("Actions.Start", invalidOrder));
+    }
+
+    [Fact]
+    public void RegisterActionsStart_Execute_ShouldNotThrow()
+    {
+        var cmd = new RegisterIoCDependencyActionsStart();
+        var exception = Record.Exception(() => cmd.Execute());
+        Assert.Null(exception);
+    }
+
+    [Fact]
+    public void IoC_Resolve_ShouldThrow_WhenDependencyIsUnknown()
+    {
+        Assert.Throws<InvalidOperationException>(() => Ioc.Resolve<object>("Unknown.Key"));
+    }
 }
