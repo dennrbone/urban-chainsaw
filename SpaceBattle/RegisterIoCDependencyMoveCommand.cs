@@ -20,7 +20,7 @@ public class RegisterIoCDependencyMoveCommand : ICommand
                 return new MoveCommand(movingObject);
             }
         );
-        
+
         registerMove.Execute();
     }
 }
