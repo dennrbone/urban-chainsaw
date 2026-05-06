@@ -34,4 +34,28 @@ public class ActionsStopTests
             Ioc.Resolve<ICommand>("Actions.Stop", order)
         );
     }
+
+    [Fact]
+    public void ActionCommand_ShouldExecuteAction()
+    {
+        // Тест для покрытия класса ActionCommand (увеличивает общий Line Rate)
+        bool executed = false;
+        var cmd = new ActionCommand(() => executed = true);
+
+        cmd.Execute();
+
+        Assert.True(executed);
+    }
+
+    [Fact]
+    public void SendCommand_ShouldSendToReceiver()
+    {
+        var mockCmd = new Mock<ICommand>();
+        var mockReceiver = new Mock<ICommandReceiver>();
+        var sendCmd = new SendCommand(mockCmd.Object, mockReceiver.Object);
+
+        sendCmd.Execute();
+
+        mockReceiver.Verify(r => r.Receive(mockCmd.Object), Times.Once);
+    }
 }
