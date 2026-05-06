@@ -1,5 +1,6 @@
 using SpaceBattle;
 using Xunit;
+using Moq;
 
 namespace SpaceBattle.Tests;
 
@@ -44,5 +45,38 @@ public class RegisterDependencyCommandInjectableCommandTests
 
         var result = Ioc.Resolve<int>("Test.Double");
         Assert.Equal(2, result);
+    }
+    [Fact]
+    public void CommandInjectableCommand_ShouldExecuteInjectedCommand()
+    {
+        var injectable = new CommandInjectableCommand();
+        var mockCommand = new Mock<ICommand>();
+        
+        injectable.Inject(mockCommand.Object);
+        injectable.Execute();
+
+        mockCommand.Verify(m => m.Execute(), Times.Once);
+    }
+
+    [Fact]
+    public void IoC_Register_ShouldWorkCorrectly()
+    {
+        var testKey = "Test.Coverage.Key";
+        Func<object[], object> strategy = args => "success";
+
+        var regCmd = Ioc.Resolve<ICommand>("IoC.Register", testKey, strategy);
+        regCmd.Execute();
+
+        var result = Ioc.Resolve<string>(testKey);
+        Assert.Equal("success", result);
+    }
+
+    [Fact]
+    public void IoC_Resolve_WithEmptyArgs_ShouldNotThrow()
+    {
+        Ioc.Resolve<ICommand>("IoC.Register", "EmptyArgsTest", (Func<object[], object>)(args => "ok")).Execute();
+        
+        var result = Ioc.Resolve<string>("EmptyArgsTest");
+        Assert.Equal("ok", result);
     }
 }
