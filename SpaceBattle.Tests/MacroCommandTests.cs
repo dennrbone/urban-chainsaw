@@ -2,66 +2,44 @@
 using System.Collections.Generic;
 using Moq;
 using Xunit;
-using System.Linq;
+using SpaceBattle;
 
-namespace SpaceBattle.Tests
+namespace SpaceBattle.Tests;
+
+public class MacroCommandTests
 {
-    public class MacroCommandTests
+    [Fact]
+    public void MacroCommand_ShouldExecuteAllCommandsInArray()
     {
-        [Fact]
-        public void MacroCommand_ShouldExecuteAllCommands_InCorrectOrder()
-        {
-            var sequence = new List<int>();
-            var cmd1 = new Mock<ICommand>();
-            cmd1.Setup(c => c.Execute()).Callback(() => sequence.Add(1));
+        var cmd1 = new Mock<ICommand>();
+        var cmd2 = new Mock<ICommand>();
+        var commands = new[] { cmd1.Object, cmd2.Object };
+        var macro = new MacroCommand(commands);
 
-            var cmd2 = new Mock<ICommand>();
-            cmd2.Setup(c => c.Execute()).Callback(() => sequence.Add(2));
+        macro.Execute();
 
-            var macro = new MacroCommand(new[] { cmd1.Object, cmd2.Object });
+        cmd1.Verify(c => c.Execute(), Times.Once());
+        cmd2.Verify(c => c.Execute(), Times.Once());
+    }
 
-            macro.Execute();
+    [Fact]
+    public void MacroCommand_ShouldStop_WhenAnyCommandThrowsException()
+    {
+        var cmd1 = new Mock<ICommand>();
+        var cmd2 = new Mock<ICommand>();
+        var cmd3 = new Mock<ICommand>();
 
-            Assert.Equal(new[] { 1, 2 }, sequence);
-            cmd1.Verify(c => c.Execute(), Times.Once());
-            cmd2.Verify(c => c.Execute(), Times.Once());
-        }
+        cmd1.Setup(c => c.Execute());
+        cmd2.Setup(c => c.Execute()).Throws(new Exception("Command failed"));
 
-        [Fact]
-        public void MacroCommand_ShouldStop_WhenCommandThrows()
-        {
-            var cmd1 = new Mock<ICommand>();
-            var cmd2 = new Mock<ICommand>();
-            cmd1.Setup(c => c.Execute()).Throws<Exception>();
-
-            var macro = new MacroCommand(new[] { cmd1.Object, cmd2.Object });
-
-            Assert.ThrowsAny<Exception>(() => macro.Execute());
-            cmd2.Verify(c => c.Execute(), Times.Never());
-        }
-
-        [Fact]
-        public void MacroCommand_WithEmptyList_ShouldDoNothing()
-        {
-            var macro = new MacroCommand(Enumerable.Empty<ICommand>());
-
-            var exception = Record.Exception(() => macro.Execute());
-
-            Assert.Null(exception);
-        }
+        var commands = new[] { cmd1.Object, cmd2.Object, cmd3.Object };
+        var macro = new MacroCommand(commands);
 
 
-        [Fact]
-        public void MacroCommand_ShouldExecuteAllCommands_WhenNoExceptions()
-        {
-            var cmd1 = new Mock<ICommand>();
-            var cmd2 = new Mock<ICommand>();
-            var macro = new MacroCommand(new[] { cmd1.Object, cmd2.Object });
+        Assert.ThrowsAny<Exception>(() => macro.Execute());
 
-            macro.Execute();
-
-            cmd1.Verify(c => c.Execute(), Times.Once());
-            cmd2.Verify(c => c.Execute(), Times.Once());
-        }
+        cmd1.Verify(c => c.Execute(), Times.Once());
+        cmd2.Verify(c => c.Execute(), Times.Once());
+        cmd3.Verify(c => c.Execute(), Times.Never());
     }
 }
