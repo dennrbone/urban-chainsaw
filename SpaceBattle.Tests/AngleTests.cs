@@ -92,5 +92,67 @@ namespace SpaceBattle.Tests
             Assert.Equal(angle1, angle2);
             Assert.Equal(7, angle1.Numerator);
         }
+
+        [Fact]
+        public void Constructor_WithOnlyNumerator_ShouldNormalize()
+        {
+            var angle = new Angle(-3);
+
+            Assert.Equal(5, angle.Numerator);
+        }
+
+        [Fact]
+        public void Constructor_WithNumeratorAndDenominator_ShouldThrowOnInvalidDenominator()
+        {
+            Assert.Throws<ArgumentException>(() => new Angle(5, 10));
+        }
+
+        [Fact]
+        public void OperatorEquals_FirstOperandNull_SecondNotNull()
+        {
+            Angle? angle1 = null;
+            var angle2 = new Angle(5, 8);
+
+            Assert.False(angle1 == angle2);
+        }
+
+        [Fact]
+        public void ImplicitConversion_ToDouble()
+        {
+            var angle = new Angle(2, 8);
+
+            double radians = angle;
+
+            Assert.Equal(Math.PI / 2, radians, 10);
+        }
+
+        [Fact]
+        public void Sin_ShouldReturnCorrectValue_ForStraightAngle()
+        {
+            var angle = new Angle(4, 8);
+
+            var sin = angle.Sin();
+
+            Assert.Equal(0, sin, 10);
+        }
+
+        [Fact]
+        public void Cos_ShouldReturnCorrectValue_ForStraightAngle()
+        {
+            var angle = new Angle(4, 8);
+
+            var cos = angle.Cos();
+
+            Assert.Equal(-1, cos, 10);
+        }
+
+        [Fact]
+        public void GetHashCode_SameAngles_ShouldHaveSameHashCode()
+        {
+            var angle1 = new Angle(15, 8);
+            var angle2 = new Angle(7, 8);
+
+            Assert.Equal(angle1.GetHashCode(), angle2.GetHashCode());
+        }
     }
 }
