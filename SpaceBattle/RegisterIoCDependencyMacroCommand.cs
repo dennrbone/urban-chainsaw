@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SpaceBattle;
+
 public class RegisterIoCDependencyMacroCommand : ICommand
 {
     public void Execute()
