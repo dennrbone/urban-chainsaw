@@ -16,5 +16,9 @@ public class RegisterIoCDependencySendCommandTests
         var cmd = Ioc.Resolve<ICommand>("Commands.Send", new Mock<ICommand>().Object, mockReceiver.Object);
 
         Assert.NotNull(cmd);
+
+        cmd.Execute();
+
+        mockReceiver.Verify(r => r.Receive(mockCommand.Object), Times.Once);
     }
 }
