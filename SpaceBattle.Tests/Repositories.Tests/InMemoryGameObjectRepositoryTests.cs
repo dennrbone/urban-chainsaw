@@ -41,4 +41,52 @@ public class InMemoryGameObjectRepositoryTests
 
         Assert.Throws<KeyNotFoundException>(() => repository.Get(missingId));
     }
+
+    [Fact]
+    public void Add_WithEmptyIdOrNullObject_ShouldThrowArgumentExceptions()
+    {
+        var repository = new InMemoryGameObjectRepository();
+
+        Assert.Throws<ArgumentException>(() => repository.Add("", new object()));
+        Assert.Throws<ArgumentException>(() => repository.Add("   ", new object()));
+
+        Assert.Throws<ArgumentNullException>(() => repository.Add("valid-id", null!));
+    }
+
+    [Fact]
+    public void Add_DuplicateId_ShouldThrowInvalidOperationException()
+    {
+        var repository = new InMemoryGameObjectRepository();
+        var obj1 = new object();
+        var obj2 = new object();
+        string id = "duplicate-id";
+
+        repository.Add(id, obj1);
+
+        Assert.Throws<InvalidOperationException>(() => repository.Add(id, obj2));
+    }
+
+    [Fact]
+    public void Remove_WithEmptyId_ShouldThrowArgumentException()
+    {
+        var repository = new InMemoryGameObjectRepository();
+
+        Assert.Throws<ArgumentException>(() => repository.Remove(""));
+    }
+
+    [Fact]
+    public void GetAll_ShouldReturnAllStoredObjects()
+    {
+        var repository = new InMemoryGameObjectRepository();
+        var obj1 = new object();
+        var obj2 = new object();
+
+        repository.Add("id-1", obj1);
+        repository.Add("id-2", obj2);
+
+        var allObjects = repository.GetAll();
+
+        Assert.Contains(obj1, allObjects);
+        Assert.Contains(obj2, allObjects);
+    }
 }
