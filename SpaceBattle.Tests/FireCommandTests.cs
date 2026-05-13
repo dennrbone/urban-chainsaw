@@ -503,5 +503,231 @@ namespace SpaceBattleTests
             Assert.NotEqual(addedIds[0], addedIds[1]);
             Assert.All(addedIds, id => Assert.StartsWith("torpedo_", id));
         }
+
+        [Fact]
+        public void Execute_WhenNormalizeReturnsDifferentVector_HandlesCorrectly()
+        {
+            // Arrange
+            NVector? receivedDirection = null;
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Authorization.Check",
+                (Func<object[], object>)(args => true)).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Normalize",
+                (Func<object[], object>)(args =>
+                {
+                    receivedDirection = (NVector)args[0];
+                    return new NVector(1, 0);
+                })).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Multiply",
+                (Func<object[], object>)(args => new NVector(10, 0))).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Add",
+                (Func<object[], object>)(args => new NVector(11, 1))).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Commands.Move",
+                (Func<object[], object>)(args => _moveCommandMock.Object)).Execute();
+
+            var command = new FireCommand(_shipMock.Object, _direction, _repoMock.Object,
+                _userId, _torpedoSpeed, _queueAction);
+
+            // Act
+            command.Execute();
+
+            // Assert
+            Assert.NotNull(receivedDirection);
+            Assert.Equal(_direction.Coords, receivedDirection.Coords);
+            _repoMock.Verify(r => r.Add(It.IsAny<string>(), It.IsAny<IDictionary<string, object>>()), Times.Once);
+        }
+
+        [Fact]
+        public void Execute_WhenMultiplyUsesCorrectSpeed_VerifiesScalar()
+        {
+            double? usedSpeed = null;
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Authorization.Check",
+                (Func<object[], object>)(args => true)).Execute();
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Normalize",
+                (Func<object[], object>)(args => new NVector(1, 0))).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Multiply",
+                (Func<object[], object>)(args =>
+                {
+                    usedSpeed = (double)args[1];
+                    return new NVector((int)usedSpeed, 0);
+                })).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Add",
+                (Func<object[], object>)(args => new NVector(11, 1))).Execute();
+            Ioc.Resolve<ICommand>("IoC.Register", "Commands.Move",
+                (Func<object[], object>)(args => _moveCommandMock.Object)).Execute();
+
+            var command = new FireCommand(_shipMock.Object, _direction, _repoMock.Object,
+                _userId, 15.5, _queueAction);
+
+            // Act
+            command.Execute();
+
+            // Assert
+            Assert.Equal(15.5, usedSpeed);
+        }
+
+        [Fact]
+        public void Execute_WhenAddCombinesVectorsCorrectly_VerifiesBothArguments()
+        {
+            NVector? velocityArg = null;
+            NVector? scaledArg = null;
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Authorization.Check",
+                (Func<object[], object>)(args => true)).Execute();
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Normalize",
+                (Func<object[], object>)(args => new NVector(1, 0))).Execute();
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Multiply",
+                (Func<object[], object>)(args => new NVector(10, 0))).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Add",
+                (Func<object[], object>)(args =>
+                {
+                    velocityArg = (NVector)args[0];
+                    scaledArg = (NVector)args[1];
+                    return new NVector(velocityArg.Coords[0] + scaledArg.Coords[0],
+                                      velocityArg.Coords[1] + scaledArg.Coords[1]);
+                })).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Commands.Move",
+                (Func<object[], object>)(args => _moveCommandMock.Object)).Execute();
+
+            var command = new FireCommand(_shipMock.Object, _direction, _repoMock.Object,
+                _userId, _torpedoSpeed, _queueAction);
+
+            // Act
+            command.Execute();
+
+            // Assert
+            Assert.NotNull(velocityArg);
+            Assert.NotNull(scaledArg);
+            Assert.Equal(_initialVelocity.Coords, velocityArg.Coords);
+            Assert.Equal(new NVector(10, 0).Coords, scaledArg.Coords);
+        }
+
+        [Fact]
+        public void Execute_WhenMoveCommandIsCreated_VerifiesProperties()
+        {
+            // Arrange
+            IDictionary<string, object>? passedProperties = null;
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Authorization.Check",
+                (Func<object[], object>)(args => true)).Execute();
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Normalize",
+                (Func<object[], object>)(args => new NVector(1, 0))).Execute();
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Multiply",
+                (Func<object[], object>)(args => new NVector(10, 0))).Execute();
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Add",
+                (Func<object[], object>)(args => new NVector(11, 1))).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Commands.Move",
+                (Func<object[], object>)(args =>
+                {
+                    passedProperties = (IDictionary<string, object>)args[0];
+                    return _moveCommandMock.Object;
+                })).Execute();
+
+            var command = new FireCommand(_shipMock.Object, _direction, _repoMock.Object,
+                _userId, _torpedoSpeed, _queueAction);
+
+            // Act
+            command.Execute();
+
+            // Assert
+            Assert.NotNull(passedProperties);
+            Assert.Contains("Position", passedProperties.Keys);
+            Assert.Contains("Velocity", passedProperties.Keys);
+            Assert.Equal(_initialPosition, passedProperties["Position"]);
+        }
+
+        [Fact]
+        public void Execute_WithVeryLargeSpeed_NoOverflow()
+        {
+            // Arrange
+            SetupSuccessfulIoC();
+            var command = new FireCommand(_shipMock.Object, _direction, _repoMock.Object,
+                _userId, double.MaxValue, _queueAction);
+
+            // Act
+            var exception = Record.Exception(() => command.Execute());
+
+            // Assert
+            Assert.Null(exception);
+            _repoMock.Verify(r => r.Add(It.IsAny<string>(), It.IsAny<IDictionary<string, object>>()), Times.Once);
+        }
+
+        [Fact]
+        public void Execute_WithVerySmallSpeed_NoUnderflow()
+        {
+            // Arrange
+            SetupSuccessfulIoC();
+            var command = new FireCommand(_shipMock.Object, _direction, _repoMock.Object,
+                _userId, double.Epsilon, _queueAction);
+
+            // Act
+            var exception = Record.Exception(() => command.Execute());
+
+            // Assert
+            Assert.Null(exception);
+            _repoMock.Verify(r => r.Add(It.IsAny<string>(), It.IsAny<IDictionary<string, object>>()), Times.Once);
+        }
+        [Fact]
+        public void Execute_CompleteCoverageTest_CoversAllLines()
+        {
+            // Arrange
+            var callLog = new List<string>();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Authorization.Check",
+                (Func<object[], object>)(args =>
+                {
+                    callLog.Add("Auth");
+                    return true;
+                })).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Normalize",
+                (Func<object[], object>)(args =>
+                {
+                    callLog.Add("Normalize");
+                    return new NVector(0, 0);
+                })).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Multiply",
+                (Func<object[], object>)(args =>
+                {
+                    callLog.Add("Multiply");
+                    return new NVector(6, 8);
+                })).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Vector.Add",
+                (Func<object[], object>)(args =>
+                {
+                    callLog.Add("Add");
+                    return new NVector(7, 9);
+                })).Execute();
+
+            Ioc.Resolve<ICommand>("IoC.Register", "Commands.Move",
+                (Func<object[], object>)(args =>
+                {
+                    callLog.Add("Move");
+                    return _moveCommandMock.Object;
+                })).Execute();
+
+            var command = new FireCommand(_shipMock.Object, _direction, _repoMock.Object,
+                "player1", 10.0, _queueAction);
+
+            // Act
+            command.Execute();
+
+            // Assert
+            Assert.Equal(new[] { "Auth", "Normalize", "Multiply", "Add", "Move" }, callLog);
+            _repoMock.Verify(r => r.Add(It.IsAny<string>(), It.IsAny<IDictionary<string, object>>()), Times.Once);
+            Assert.Single(_commandQueue);
+        }
     }
 }
