@@ -729,5 +729,93 @@ namespace SpaceBattleTests
             _repoMock.Verify(r => r.Add(It.IsAny<string>(), It.IsAny<IDictionary<string, object>>()), Times.Once);
             Assert.Single(_commandQueue);
         }
+        public class NVectorTests
+        {
+            [Fact]
+            public void Constructor_CreatesVectorWithCoordinates()
+            {
+                var vector = new NVector(1, 2, 3);
+                Assert.Equal(new[] { 1, 2, 3 }, vector.Coords);
+            }
+
+            [Fact]
+            public void Constructor_Empty_CreatesEmptyVector()
+            {
+                var vector = new NVector();
+                Assert.Empty(vector.Coords);
+            }
+
+            [Fact]
+            public void Constructor_SingleCoordinate_CreatesVector()
+            {
+                var vector = new NVector(5);
+                Assert.Equal(new[] { 5 }, vector.Coords);
+            }
+
+            [Fact]
+            public void OperatorAdd_SameDimensions_AddsCorrectly()
+            {
+                var a = new NVector(1, 2);
+                var b = new NVector(3, 4);
+                var result = a + b;
+                Assert.Equal(new[] { 4, 6 }, result.Coords);
+            }
+
+            [Fact]
+            public void OperatorAdd_DifferentDimensions_ThrowsArgumentException()
+            {
+                var a = new NVector(1, 2);
+                var b = new NVector(1, 2, 3);
+                Assert.Throws<ArgumentException>(() => a + b);
+            }
+
+            [Fact]
+            public void Equals_SameVector_ReturnsTrue()
+            {
+                var a = new NVector(1, 2, 3);
+                var b = new NVector(1, 2, 3);
+                Assert.True(a.Equals(b));
+                Assert.True(a == b);
+            }
+
+            [Fact]
+            public void Equals_DifferentVectors_ReturnsFalse()
+            {
+                var a = new NVector(1, 2, 3);
+                var b = new NVector(1, 2, 4);
+                Assert.False(a.Equals(b));
+                Assert.True(a != b);
+            }
+
+            [Fact]
+            public void Equals_Null_ReturnsFalse()
+            {
+                var a = new NVector(1, 2);
+                Assert.False(a.Equals(null));
+            }
+
+            [Fact]
+            public void Equals_DifferentType_ReturnsFalse()
+            {
+                var a = new NVector(1, 2);
+                Assert.False(a.Equals("string"));
+            }
+
+            [Fact]
+            public void GetHashCode_SameVectors_ReturnsSameHashCode()
+            {
+                var a = new NVector(1, 2, 3);
+                var b = new NVector(1, 2, 3);
+                Assert.Equal(a.GetHashCode(), b.GetHashCode());
+            }
+
+            [Fact]
+            public void GetHashCode_DifferentVectors_ReturnsDifferentHashCode()
+            {
+                var a = new NVector(1, 2, 3);
+                var b = new NVector(1, 2, 4);
+                Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
+            }
+        }
     }
 }
