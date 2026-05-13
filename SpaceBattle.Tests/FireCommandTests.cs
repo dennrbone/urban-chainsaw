@@ -490,7 +490,7 @@ namespace SpaceBattleTests
 
             var addedIds = new List<string>();
 
-            
+
             _repoMock.Setup(r => r.Add(It.IsAny<string>(), It.IsAny<object>()))
                 .Callback<string, object>((id, dict) => addedIds.Add(id));
 
