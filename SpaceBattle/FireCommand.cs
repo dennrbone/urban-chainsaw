@@ -30,31 +30,26 @@ namespace SpaceBattle
 
         public void Execute()
         {
-            // 1. Проверяем авторизацию
             var isAuthorized = Ioc.Resolve<bool>("Authorization.Check", _userId);
             if (!isAuthorized)
             {
                 throw new UnauthorizedAccessException($"User {_userId} is not authorized to fire.");
             }
 
-            // 2. Рассчитываем скорость торпеды динамически через стратегии IoC
-            // Это обходит отсутствие методов .Normalize() и оператора * внутри класса NVector
+
             NVector normalizedDir = Ioc.Resolve<NVector>("Vector.Normalize", _direction);
             NVector scaledDir = Ioc.Resolve<NVector>("Vector.Multiply", normalizedDir, _torpedoSpeed);
             NVector torpedoVelocity = Ioc.Resolve<NVector>("Vector.Add", _ship.Velocity, scaledDir);
 
-            // 3. Создаем торпеду как словарь свойств
             var torpedoProperties = new Dictionary<string, object>
             {
                 { "Position", _ship.Position },
                 { "Velocity", torpedoVelocity }
             };
 
-            // 4. Добавляем торпеду в репозиторий Разработчика 1
             string torpedoId = $"torpedo_{Guid.NewGuid()}";
             _repository.Add(torpedoId, torpedoProperties);
 
-            // 5. Отправляем MoveCommand в очередь игры
             var moveCommand = Ioc.Resolve<ICommand>("Commands.Move", torpedoProperties);
             _commandQueue(moveCommand);
         }
