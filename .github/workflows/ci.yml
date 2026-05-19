@@ -1,0 +1,61 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+permissions:
+  pull-requests: write
+  contents: read
+  checks: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x' 
+
+    - name: Restore dependencies
+      run: dotnet restore SpaceBattle.sln
+
+    - name: Check code formatting
+      run: dotnet format SpaceBattle.sln --verify-no-changes
+
+    - name: Build
+      run: dotnet build SpaceBattle.sln --configuration Release --no-restore
+
+    - name: Test
+      run: >
+        dotnet test SpaceBattle.sln 
+        --configuration Release 
+        --no-build 
+        --logger "trx;LogFileName=test-results.trx" 
+        --collect:"XPlat Code Coverage" 
+        --results-directory ./TestResults
+
+    - name: Code Coverage Summary
+      uses: irongut/CodeCoverageSummary@v1.3.0
+      with:
+        filename: TestResults/**/coverage.cobertura.xml
+        badge: true
+        fail_below_min: true
+        format: markdown
+        hide_branch_rate: true 
+        hide_complexity: true 
+        indicators: true
+        output: both
+        thresholds: '90 0' 
+
+    - name: Add Coverage PR Comment
+      uses: thollander/actions-comment-pull-request@v2
+      if: always() 
+      with:
+        filePath: code-coverage-results.md
