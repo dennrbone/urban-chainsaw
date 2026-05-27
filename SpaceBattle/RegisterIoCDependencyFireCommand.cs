@@ -25,7 +25,7 @@ namespace SpaceBattle
 
                 var movingShip = Ioc.Resolve<IMoving>("Adapters.IMoving", shipObj);
                 var authService = Ioc.Resolve<IAuthorizationService>("Services.Authorization");
-                return new FireCommand(movingShip, direction, repository, userId, torpedoSpeed, queue, authService);
+                return new FireCommand(movingShip, direction, repository, userId, torpedoSpeed, queue, Ioc.Resolve<IAuthorizationService>("Services.Authorization"));
             })).Execute();
         }
     }
