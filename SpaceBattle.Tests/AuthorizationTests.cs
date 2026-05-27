@@ -34,12 +34,12 @@ public class AuthorizationTests
         mockAuth.Setup(a => a.Authorize("player1", "Fire")).Verifiable();
 
         var mockRepo = new Mock<IGameObjectRepository>();
-        
+
         var shipMock = new Mock<IMoving>();
         shipMock.Setup(s => s.Velocity).Returns(new NVector(0, 0));
         shipMock.Setup(s => s.Position).Returns(new NVector(0, 0));
 
-        var command = new FireCommand(shipMock.Object, new NVector(1, 0), mockRepo.Object, "player1", 5.0, cmd => {}, mockAuth.Object);
+        var command = new FireCommand(shipMock.Object, new NVector(1, 0), mockRepo.Object, "player1", 5.0, cmd => { }, mockAuth.Object);
 
         command.Execute();
 
@@ -56,7 +56,7 @@ public class AuthorizationTests
         var mockRepo = new Mock<IGameObjectRepository>();
         var shipMock = new Mock<IMoving>();
 
-        var command = new FireCommand(shipMock.Object, new NVector(1, 0), mockRepo.Object, "bad_player", 5.0, cmd => {}, mockAuth.Object);
+        var command = new FireCommand(shipMock.Object, new NVector(1, 0), mockRepo.Object, "bad_player", 5.0, cmd => { }, mockAuth.Object);
 
         Assert.Throws<UnauthorizedException>(() => command.Execute());
     }

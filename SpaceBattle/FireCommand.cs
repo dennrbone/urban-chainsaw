@@ -29,7 +29,7 @@ namespace SpaceBattle
             _torpedoSpeed = torpedoSpeed;
             _commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
 
-            try 
+            try
             {
                 _authService = authService ?? Ioc.Resolve<IAuthorizationService>("Services.Authorization");
             }

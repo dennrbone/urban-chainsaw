@@ -11,9 +11,9 @@ namespace SpaceBattleTests
         [Fact]
         public void IoC_AuthorizationRegistration_ResolvesWithoutErrors()
         {
-            var testPermissions = new List<(string PlayerId, string Action)> 
-            { 
-                ("player123", "Fire") 
+            var testPermissions = new List<(string PlayerId, string Action)>
+            {
+                ("player123", "Fire")
             };
 
             new RegisterIoCDependencyAuthorization().Execute();
