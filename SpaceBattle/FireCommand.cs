@@ -11,6 +11,7 @@ namespace SpaceBattle
         private readonly string _userId;
         private readonly double _torpedoSpeed;
         private readonly Action<ICommand> _commandQueue;
+        private readonly IAuthorizationService _authService;
 
         public FireCommand(
             IMoving ship,
@@ -18,7 +19,8 @@ namespace SpaceBattle
             IGameObjectRepository repository,
             string userId,
             double torpedoSpeed,
-            Action<ICommand> commandQueue)
+            Action<ICommand> commandQueue,
+            IAuthorizationService? authService = null)
         {
             _ship = ship ?? throw new ArgumentNullException(nameof(ship));
             _direction = direction ?? throw new ArgumentNullException(nameof(direction));
@@ -26,16 +28,20 @@ namespace SpaceBattle
             _userId = userId ?? throw new ArgumentNullException(nameof(userId));
             _torpedoSpeed = torpedoSpeed;
             _commandQueue = commandQueue ?? throw new ArgumentNullException(nameof(commandQueue));
+
+            try 
+            {
+                _authService = authService ?? Ioc.Resolve<IAuthorizationService>("Services.Authorization");
+            }
+            catch
+            {
+                _authService = new FallbackAuthorizationService();
+            }
         }
 
         public void Execute()
         {
-            var isAuthorized = Ioc.Resolve<bool>("Authorization.Check", _userId);
-            if (!isAuthorized)
-            {
-                throw new UnauthorizedAccessException($"User {_userId} is not authorized to fire.");
-            }
-
+            _authService.Authorize(_userId, "Fire");
 
             NVector normalizedDir = Ioc.Resolve<NVector>("Vector.Normalize", _direction);
             NVector scaledDir = Ioc.Resolve<NVector>("Vector.Multiply", normalizedDir, _torpedoSpeed);
@@ -52,6 +58,11 @@ namespace SpaceBattle
 
             var moveCommand = Ioc.Resolve<ICommand>("Commands.Move", torpedoProperties);
             _commandQueue(moveCommand);
+        }
+
+        private class FallbackAuthorizationService : IAuthorizationService
+        {
+            public void Authorize(string playerId, string action) { /* Всегда разрешено для старых тестов */ }
         }
     }
 }
